@@ -12,7 +12,7 @@
         <PrePosition X="0.0000" Y="0.0000" />
         <PreSize X="0.0000" Y="0.0000" />
         <Children>
-          <NodeObjectData Name="Sprite_1" ActionTag="-805988128" FrameEvent="" Tag="4" LeftMargin="-39.2000" RightMargin="236.2000" TopMargin="57.0000" BottomMargin="-41.0000" ctype="SpriteObjectData">
+          <NodeObjectData Name="sprite_1" ActionTag="-805988128" FrameEvent="" CustomClassName="CCSprite" Tag="4" LeftMargin="-39.2000" RightMargin="236.2000" TopMargin="57.0000" BottomMargin="-41.0000" ctype="SpriteObjectData">
             <Position X="2.0000" Y="1.0000" />
             <Scale ScaleX="1.0000" ScaleY="1.0000" />
             <AnchorPoint ScaleX="0.4000" ScaleY="0.5000" />
