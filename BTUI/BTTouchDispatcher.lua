@@ -17,7 +17,7 @@ function BTTouchDispatcher:getInstance()
 end
 
 function BTTouchDispatcher:addEventListener( listener )
-	self._listeners[tostring(listener.uerdata)] = listener
+	self._listeners[tostring(listener.uerdata)] = {node = listener}
 end
 
 function BTTouchDispatcher:startListen( ... )
@@ -37,15 +37,25 @@ function BTTouchDispatcher:onTouchEvent(event, x, y)
 	if self._isStop then
 		return
 	end
+	if event == "began" then
+		for k, listener in pairs(self._listeners) do
+			listener.isHandleTouch = listener.node:isTouched(ccp(x, y))
+		end
+	end
 	local sortListeners = self:sortListener()
 	for i = 1, #sortListeners do
 		local listenerAddress = tostring(sortListeners[i])
 		local listener = self._listeners[listenerAddress]
-		if listener.onTouchEvent ~= nil then
-			listen:onTouchEvent(event, x, y)
-		end
-		if listener:isSwallowTouch() then
-			break
+		if listener.isHandleTouch then
+			if listener.node.onTouchEvent ~= nil then
+				local ret = listener.node:onTouchEvent(event, x, y)
+				if ret == false then
+					listener.isHandleTouch = false
+				end
+			end
+		 	if listener:isSwallowTouch() then
+				break
+			end
 		end
 	end
 end

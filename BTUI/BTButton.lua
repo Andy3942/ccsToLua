@@ -13,29 +13,70 @@ BTButton.Status = {
 	enabled 	= 3,	
 }
 
+BTButton.Event = {
+	pressed 	= 1,
+	moved 		= 2,
+	touchEnd    = 3,
+}
+
 function BTButton:ctor()
 	self._normal = nil
 	self._selected = nil
 	self._disable = nil
 	self._scale9Enabled = false
 	self._status = self.Status.unselected
+	self._size = CCSizeMake(0, 0)
+	self._touchBeganPosition = nil
+	self._touchEndPosition = nil
+	self._touchBeganWorldPosition = nil
+	self._clickCallback = nil
 end
 
-function BTButton:createWithImage( normalImage, selectedImage, disableImage)
-
+function BTButton:createWithImage( normalImage, selectedImage, disableImage, scale9Enabled)
+	self:initWithImage(normalImage, selectedImage, disableImage, scale9Enabled)
 end
 
-function BTButton:createWithSprite( normal, selected, disable )
+function BTButton:createWithNode( normal, selected, disable)
+	self:initWithNode(normal, selected, disable)
 end
 
 function BTButton:setScale9Eabled( enable )
 	self._scale9Enabled = enable
 end
 
-function BTButton:initWithImage( normalImage, selectedImage, disableImage )
+function BTButton:initWithImage( normalImage, selectedImage, disableImage, scale9Enabled )
+	self._scale9Enabled = scale9Enabled or false
+	local normal = nil
+	local selected = nil
+	local disable = nil
+	if scale9Enabled then
+		normal = BTScale9Sprite:create(normalImage)
+		if selectedImage then
+			selected = BTScale9Sprite:create(selectedImage)
+		end
+		if disableImage then
+			disable = BTScale9Sprite:create(disableImage)
+		end
+	else
+		normal = BTSprite:create(normalImage)
+		if selectedImage then
+			selected = BTSprite:create(selectedImage)
+		end
+		if selectedImage then
+			disable = BTSprite:create(disableImage)
+		end
+	end
+	self:initWithNode(normal, selected, disable)
 end
 
 function BTButton:initWithNode( normal, selected, disable )
+	self._normal = normal
+	self._selected = selected
+	self._disable = disable
+	self:addNode(normal)
+	self:updateContentSize()
+	
+	self:updateVisibility()
 end
 
 function BTButton:setNormal( normal )
@@ -50,6 +91,20 @@ end
 
 function BTButton:getNormal( ... )
 	return self._normal
+end
+
+function BTButton:setSize( size )
+	self._size = size
+	if self._scale9Enabled then
+		normal:setContentSize(size)
+		if selected then
+			selected:setContentSize(size)
+		end
+		if disable then
+			selected:setContentSize(size)
+		end
+	end
+	self:setContentSize(size)
 end
 
 function BTButton:setSelected( selected )
@@ -74,12 +129,38 @@ function BTButton:setDisable( disable )
 	self:setPosition(point(0.5, 0.5, self))
 end
 
+function BTButton:updatePosition( ... )
+	local anchorPoint = ccp(0.5, 0.5)
+	local position = point(0.5, 0.5, self)
+	normal:setAnchorPoint(anchorPoint)
+	normal:setPosition(position)
+	if selected then
+		selected:setAnchorPoint(anchorPoint)
+		selected:setPosition(position)
+	end
+	if disable then
+		disable:setAnchorPoint(anchorPoint)
+		disable:setPosition(position)
+	end
+end
+
 function BTButton:updateContentSize( ... )
-	self:setContentSize(self._normal:getContentSize())
+	self:setSize(self._normal:getContentSize())
 end
 
 function BTButton:setSize( size )
+	self._size = size
 	self:setContentSize(size)
+	if self._scale9Enabled then
+		self._normal:setContentSize(size)
+		if selected then
+			self._selected:setContentSize(size)
+		end
+		if disable then
+			self._disable:setContentSize(size)
+		end
+	end
+	self:updatePosition()
 end
 
 function BTButton:setEnabled( enabled )
@@ -101,7 +182,7 @@ function BTButton:isEnabled( ... )
 	return self._status ~= self.Status.enabled
 end
 
-function updateVisibility( ... )
+function BTButton:updateVisibility( ... )
 	local normal_visible = true
 	local selected_visible = false
 	local disable_visible = false
@@ -127,7 +208,32 @@ function updateVisibility( ... )
 	end
 end
 
-function onTouchEvent( event )
-	-- body
+function BTButton:setClickCallback( callback )
+	self._clickCallback = callback
 end
 
+function BTButton:onTouchEvent( event, x, y )
+	local position = ccp(x, y)
+	if event == "began" then
+		self._touchBeganPosition = ccp(x, y)
+		self._touchBeganWorldPosition = self:getWorldPosition()
+	elseif event = "moved" then
+		if not self:isTouched(position) then
+			self:setStatus(BTButton.Status.unselected)
+			return false
+		end
+		local worldPosition = self:getWorldPosition()
+		if not worldPosition:equals(self._touchBeganWorldPosition) then
+			self:setStatus(BTButton.Status.unselected)
+			return false
+		end
+	else
+		local worldPosition = self:getWorldPosition()
+		if worldPosition:equals(self._touchBeganWorldPosition) then
+			if self._clickCallback ~= nil then
+				self._clickCallback(self:getTag(), self)
+			end
+		end
+		self:setStatus(BTButton.Status.unselected)
+	end
+end
