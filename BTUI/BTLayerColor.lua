@@ -13,5 +13,5 @@ end)
 combine(BTLayer, BTLayerColor)
 
 function BTLayerColor:create( color, width, height )
-	return BTLayerColor:new(color, width, height)
+	return BTLayerColor.new(color, width, height)
 end

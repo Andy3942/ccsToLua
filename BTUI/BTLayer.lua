@@ -15,5 +15,5 @@ function BTLayer:ctor()
 end
 
 function BTLayer:create( ... )
-	return BTLayer:new()
+	return BTLayer.new()
 end

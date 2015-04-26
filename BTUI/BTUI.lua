@@ -4,8 +4,14 @@
 -- Purpose: 公用方法
 
 combine = function (src, dest)
-	for k, v in pairs(src) do 
-		dest[k] = v
+	local functions = {}
+	functions.__create = true
+	functions.__cname = true
+	functions.new = true
+	for k, v in pairs(src) do
+		if functions[k] ~= true then
+			dest[k] = v
+		end
 	end
 end
 
@@ -20,5 +26,6 @@ point = function ( x, y, node )
 	end
 	return ccp(x, y)
 end
-
-require ""
+local fp = io.open("/Users/bzx/Documents/sango/FknSango/CardSango/Resources/script/ccsToLua/BTUI/log.lua", "w")
+fp:write("")
+fp:close()
