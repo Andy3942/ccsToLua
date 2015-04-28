@@ -19,5 +19,14 @@ function TestLayer:loadText_1()
     self._Text_1:setAnchorPoint(ccp(0.5, 0.5))
     self._Text_1:setNodeColor(ccc3(255.0, 59.0, 12.0))
     self._Text_1:setNodeOpacity(167.0)
+    local ritchInfo = 
+    {
+        elements = {
+            {
+                text = "fuckkkkkkkkkkk"
+            }
+        }
+    }
+    self._Text_1:setRichInfo(ritchInfo)
 end
 

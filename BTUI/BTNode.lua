@@ -14,6 +14,7 @@ function BTNode:ctor()
 	self._touchEnabled = false
 	self._nodeSize = CCSizeMake(0, 0)
 	self._bg = nil
+	self._parent = nil
 	self:setAnchorPoint(ccp(0, 0))
 	self:ignoreAnchorPointForPosition(false)
 end
@@ -30,8 +31,23 @@ function BTNode:addNode( node, zOrder, tag )
 	self:addChild(node)
 end
 
-function BTNode:getChildByName( name )
+function BTNode:getNodeByName( name )
 	return self._children[name]
+end
+
+function BTNode:removeNodeByName( name )
+	local node = self._children[name]
+	if node then
+		node:removeFromParent()
+	end
+end
+
+function BTNode:getNodeParent( ... )
+	return self._parent
+end
+
+function BTNode:setNodeParent( parent )
+	self._parent = parent
 end
 
 function BTNode:setNodeSize( size )
@@ -43,6 +59,22 @@ function BTNode:getNodeSize( ... )
 	return self._nodeSize
 end
 
+function BTNode:repalce(node)
+	local parent = self:getParent()
+	if parent then
+		node:copyBaseInfo(self)
+		self:removeFromParent()
+		parent:addNode(node)
+	end
+end
+
+function BTNode:copyBaseInfo(node)
+	self:setPosition(node:getPosition())
+	self:setAnchorPoint(node:getAnchorPoint())
+	self:setScaleX(node:getScaleX())
+	self:setScaleY(node:getScaleY())
+end
+
 function BTNode:setName( name )
 	self._name = name
 end
@@ -52,7 +84,7 @@ function BTNode:getName()
 end
 
 function BTNode:removeFromParent( ... )
-	self:removeFromParentAndCleanup(true)
+	self:getNodeParent():removeNodeByName(self._name)
 end
 
 function BTNode:setSwallowTouch( isSwallowTouch )

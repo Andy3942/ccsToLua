@@ -3,6 +3,8 @@
 -- Date: 2015-04-25
 -- Purpose: 文本
 
+require "script/libs/LuaCCLabel"
+
 BTLabel = class("BTLabel", function ()
 	return BTNode:create()
 end)
@@ -32,6 +34,26 @@ function BTLabel:create(text,  fontName, fontSize)
 end
 
 function BTLabel:setRichInfo(richInfo)
+	self._ritchInfo = richInfo
+	self:refresh()
+end
+
+function BTLabel:getRichInfo( ... )
+	return self._ritchInfo
+end
+
+function BTLabel:refresh( ... )
+	if self._ritchInfo == nil then
+		return
+	end
+	if self._label ~= nil then
+		self._label:removeFromParentAndCleanup(true)
+	end
+	self._label = LuaCCLabel.createRichLabel(self._ritchInfo)
+	self:addChild(self._label)
+	self._label:setAnchorPoint(ccp(0, 0))
+	self._label:setPosition(ccp(0, 0))
+	self:updateNodeSize()
 end
 
 function BTLabel:setString( text )
@@ -72,8 +94,3 @@ end
 function BTLabel:setNodeOpacity( opacity )
 	self._label:setOpacity(opacity)
 end
-
-
-
-
-
