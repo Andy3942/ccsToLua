@@ -19,6 +19,11 @@ BTButton.Event = {
 	touchEnd    = 3,
 }
 
+BTButton.Type = {
+	normal 		= 1,
+	radio 		= 2,
+}
+
 function BTButton:ctor()
 	BTNode.ctor(self)
 	self._normal = nil
@@ -31,7 +36,9 @@ function BTButton:ctor()
 	self._touchBeganWorldPosition = nil
 	self._clickCallback = nil
 	self._isSwallowTouch = true
+	self._type = BTButton.Type.normal
 	self._capInsets = nil
+	self._radioInfo = nil
 end
 
 function BTButton:createWithImage( normalImage, selectedImage, disabledImage, scale9Enabled)
@@ -48,6 +55,30 @@ end
 
 function BTButton:setScale9Eabled( enable )
 	self._scale9Enabled = enable
+end
+
+function BTButton:setType( type )
+	self._type = type
+end
+
+function BTButton:getType( )
+	return self._type
+end
+
+function BTButton:setRadioInfo( radioInfo )
+	self._radioInfo = radioInfo
+	self:setType(BTButton.Type.radio)
+end
+
+function BTButton:addRadioPartner(button)
+	self._radioInfo = self._radioInfo or {}
+	self._radioInfo.curButton = self._radioInfo.curButton or self
+	self._radioInfo.buttons = self._radioInfo.buttons or {}
+	self._radioInfo.buttons[tostring(button)] = button
+	self._radioInfo.buttons[tostring(self)] = self 
+	button:setRadioInfo(self._radioInfo)
+	self:setType(BTButton.Type.radio)
+	button:setType(BTButton.Type.radio)
 end
 
 function BTButton:initWithImage( normalImage, selectedImage, disabledImage, scale9Enabled )
@@ -176,9 +207,9 @@ end
 
 function BTButton:setEnabled( enabled )
 	if enabled then
-		self:setStatus(self.Status.unselected)
+		self:setStatus(BTButton.Status.unselected)
 	else
-		self:setStatus(self.Status.disabled)
+		self:setStatus(BTButton.Status.disabled)
 	end
 end
 
@@ -186,11 +217,18 @@ function BTButton:setStatus( status )
 	if self._status ~= status then
 		self._status = status
 		self:updateVisibility()
+		if status == BTButton.Status.disabled then
+			self:setTouchEnabled(false)
+		end
 	end
 end
 
+function BTButton:getStatus(  )
+	return self._status
+end
+
 function BTButton:isEnabled( ... )
-	return self._status ~= self.Status.disabled
+	return self._status ~= BTButton.Status.disabled
 end
 
 function BTButton:updateVisibility( ... )
@@ -246,6 +284,12 @@ function BTButton:onTouchEvent( event, x, y )
 				self._clickCallback(self:getTag(), self)
 			end
 		end
-		self:setStatus(BTButton.Status.unselected)
+		if self._type == BTButton.Type.normal then
+			self:setStatus(BTButton.Status.unselected)
+		elseif self._type == BTButton.Type.radio then
+			self._radioInfo.curButton:setStatus(BTButton.Status.unselected)
+			self:setStatus(BTButton.Status.disabled)
+			self._radioInfo.curButton = self
+		end
 	end
 end
