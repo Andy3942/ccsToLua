@@ -108,11 +108,6 @@ class TOLua(object):
                 elif className == "ScrollViewObjectData" or className == "ListViewObjectData":
                     if className == "ScrollViewObjectData":
                         self._body += self.appendCode(indent, "self._%s = BTScrollView:create()"%(name))
-                        #innerNodeSize
-                        InnerNodeSize = data["InnerNodeSize"]
-                        width = InnerNodeSize.get("Width")
-                        height = InnerNodeSize.get("Height")
-                        self._body += self.appendCode(indent, "self._%s:setInnerNodeSize(CCSizeMake(%s, %s))"%(name, width, height))
                     elif className == "ListViewObjectData":
                         self._body += self.appendCode(indent, "self._%s = BTTableView:create()"%(name))
                     #direction
@@ -144,6 +139,12 @@ class TOLua(object):
                 self._body += self.appendCode(indent, "self._%s:setNodeSize(%s)"%(name, size))
                 if className == "ListViewObjectData":
                     self._body += self.appendCode(indent, "self._%s:setInnerNodeSize(%s)"%(name, size))
+            #innerNodeSize
+            if className == "ScrollViewObjectData":
+                InnerNodeSize = data["InnerNodeSize"]
+                width = InnerNodeSize.get("Width")
+                height = InnerNodeSize.get("Height")
+                self._body += self.appendCode(indent, "self._%s:setInnerNodeSize(CCSizeMake(%s, %s))"%(name, width, height))
             #tag
             tag = data.get("Tag", None)
             if tag is not None:
@@ -189,6 +190,9 @@ class TOLua(object):
                 a = float(data.get("BackColorAlpha", 255))
                 self._body += self.appendCode(indent, "self._%s:setBgColor(ccc3(%s, %s, %s))"%(name, r, g, b))
                 self._body += self.appendCode(indent, "self._%s:setBgOpacity(%s)"%(name, a))
+            TouchEnable = data.get("TouchEnable", None)
+            if TouchEnable is not None:
+                self._body += self.appendCode(indent, "self._%s:setTouchEnabled(true)"%(name))
             #end
             indent -= 1
             self._body += self.appendCode(indent, "end\n")
@@ -211,8 +215,8 @@ class TOLua(object):
         print(self._class_name)
         print(self._class_file_path)
         print(self._file_path)
-        #fp = open(self._class_file_path, "w")
-        fp = open("/Users/bzx/Documents/sango/FknSango/CardSango/Resources/script/ccsToLua/TestLayer.lua", "w")
+        fp = open(self._class_file_path, "w")
+        #fp = open("/Users/bzx/Documents/sango/FknSango/CardSango/Resources/script/ccsToLua/TestLayer.lua", "w")
         fp.write(self._text)
         fp.close()
     
