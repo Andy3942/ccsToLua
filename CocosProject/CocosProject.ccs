@@ -1,0 +1,52 @@
+<Solution>
+  <PropertyGroup Name="CocosProject" Version="2.2.1.0" Type="CocosStudio" />
+  <SolutionFolder>
+    <Group ctype="ResourceGroup">
+      <RootFolder Name=".">
+        <Project Name="TestLayer.csd" Type="Scene" />
+        <Folder Name="images">
+          <Folder Name="athena">
+            <Image Name="change_n.png" />
+          </Folder>
+          <Folder Name="achie">
+            <Image Name="hero_h.png" />
+            <Image Name="hero_n.png" />
+          </Folder>
+          <Folder Name="item">
+            <Folder Name="bg">
+              <Image Name="itembg_2.png" />
+            </Folder>
+          </Folder>
+          <Folder Name="active">
+            <Folder Name="rob">
+              <Image Name="bg_9s.png" />
+            </Folder>
+          </Folder>
+          <Folder Name="common">
+            <Image Name="btn_closenormal.png" />
+            <Image Name="btn_closeselected.png" />
+            <Folder Name="btn">
+              <Image Name="btn_red_n.png" />
+              <Image Name="btn_red_h.png" />
+            </Folder>
+            <Image Name="0.png" />
+            <Image Name="bgng_lefttimes.png" />
+            <Image Name="viewbg1.png" />
+          </Folder>
+          <Folder Name="new_user">
+            <Image Name="girl.png" />
+          </Folder>
+          <Folder Name="astrology">
+            <Image Name="astro_bg.png" />
+          </Folder>
+          <Folder Name="formation">
+            <Folder Name="changeformation">
+              <Image Name="titlebg.png" />
+            </Folder>
+          </Folder>
+        </Folder>
+        <File Name="py.ttf" />
+      </RootFolder>
+    </Group>
+  </SolutionFolder>
+</Solution>
