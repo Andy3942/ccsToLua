@@ -24,14 +24,16 @@ class TOLua(object):
 
     def toCode(self):
         data = self._data["GameProjectFile"]["Content"]["Content"]["ObjectData"]
-        className = "BTLayer"
+        className = "STLayer"
         self._text = "%s = class(\"%s\", function()\n\treturn %s:create()\nend)\n\n"%(self._class_name, self._class_name, className)
         self.nodeToCode(data, None)
         self._text += self._head + "\n"
         self._text += self._create_function + "\n"
         self._text += self._body
+        self._text += self.appendCode(0, "function %s:getMemberNodeByName(name)"%(self._class_name))
+        self._text += self.appendCode(1, "return self[\"_\" .. name]")
+        self._text += self.appendCode(0, "end")
         self._text = self._text.expandtabs(4)
-
     def nodeToCode(self, data, parent):
         name = data["Name"]
         indent = 0
@@ -48,10 +50,10 @@ class TOLua(object):
             className = data["ctype"]
             if customClassName is None:
                 if className == "SingleNodeObjectData":
-                    self._body += self.appendCode(indent, "self._%s = BTNode:create()"%(name))
+                    self._body += self.appendCode(indent, "self._%s = STNode:create()"%(name))
                 elif className == "SpriteObjectData":
-                    self._body += self.appendCode(indent, "self._%s = BTSprite:create(\"%s\")"%(name, data["FileData"]["Path"]))
-                #BTButton
+                    self._body += self.appendCode(indent, "self._%s = STSprite:create(\"%s\")"%(name, data["FileData"]["Path"]))
+                #STButton
                 elif className == "ButtonObjectData":
                     normalImage = data["NormalFileData"]["Path"]
                     selectedImage = data["PressedFileData"]["Path"]
@@ -59,7 +61,17 @@ class TOLua(object):
                     Scale9Enable = data.get("Scale9Enable", "false")
                     if Scale9Enable == "True":
                         Scale9Enable = "true"
-                    self._body += self.appendCode(indent, "self._%s = BTButton:createWithImage(\"%s\", \"%s\", \"%s\", %s)"%(name, normalImage, selectedImage, disabledImage, Scale9Enable))
+                    normalImage = "\"%s\""%(normalImage)
+                    if selectedImage == "Default/Button_Press.png":
+                        selectedImage = "nil"
+                    else:
+                        selectedImage = "\"%s\""%(selectedImage)
+
+                    if disabledImage == "Default/Button_Disable.png":
+                        disabledImage = "nil"
+                    else:
+                        disabledImage = "\"%s\""%(disabledImage)
+                    self._body += self.appendCode(indent, "self._%s = STButton:createWithImage(%s, %s, %s, %s)"%(name, normalImage, selectedImage, disabledImage, Scale9Enable))
                     if Scale9Enable == "true":
                         Scale9OriginX = float(data.get("Scale9OriginX", 0))
                         Scale9OriginY = float(data.get("Scale9OriginY", 0))
@@ -77,17 +89,17 @@ class TOLua(object):
                         else:
                             FontName = "g_sFontName"
                     FontSize = data["FontSize"]
-                    self._body += self.appendCode(indent, "self._%s = BTLabel:create(\"%s\", %s, %s)"%(name, LabelText, FontName, FontSize))
+                    self._body += self.appendCode(indent, "self._%s = STLabel:create(\"%s\", %s, %s)"%(name, LabelText, FontName, FontSize))
                     Alpha = data.get("Alpha", None)
                     if Alpha is not None:
                         data["CColor"]["A"] = Alpha
                     data["Size"] = None
                     # todo
                 elif className == "TextFieldObjectData":
-                    self._body += self.appendCode(indent, "self._%s = BTSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
                     # todo
                 elif className == "LoadingBarObjectData":
-                    self._body += self.appendCode(indent, "self._%s = BTSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
                     # todo
                 elif className == "ImageViewObjectData":
                     Scale9OriginX = float(data.get("Scale9OriginX", 0))
@@ -95,21 +107,21 @@ class TOLua(object):
                     Scale9Width = float(data.get("Scale9Width"))
                     Scale9Height = float(data.get("Scale9Height"))
                     capInset = "CCRectMake(%s, %s, %s, %s)"%(Scale9OriginX, Scale9OriginY, Scale9Width, Scale9Height)
-                    self._body += self.appendCode(indent, "self._%s = BTScale9Sprite:create(\"%s\", %s)"%(name, data["FileData"]["Path"], capInset))
+                    self._body += self.appendCode(indent, "self._%s = STScale9Sprite:create(\"%s\", %s)"%(name, data["FileData"]["Path"], capInset))
                 elif className == "CheckBoxObjectData":
-                    self._body += self.appendCode(indent, "self._%s = BTSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
                     # todo
                 elif className == "PageViewObjectData":
-                    self._body += self.appendCode(indent, "self._%s = BTSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
                     # todo
                 elif className == "PanelObjectData":
-                    self._body += self.appendCode(indent, "self._%s = BTPanel:create()"%(name))
+                    self._body += self.appendCode(indent, "self._%s = STLayout:create()"%(name))
                     # todo 
                 elif className == "ScrollViewObjectData" or className == "ListViewObjectData":
                     if className == "ScrollViewObjectData":
-                        self._body += self.appendCode(indent, "self._%s = BTScrollView:create()"%(name))
+                        self._body += self.appendCode(indent, "self._%s = STScrollView:create()"%(name))
                     elif className == "ListViewObjectData":
-                        self._body += self.appendCode(indent, "self._%s = BTTableView:create()"%(name))
+                        self._body += self.appendCode(indent, "self._%s = STTableView:create()"%(name))
                     #direction
                     ScrollDirectionType = data["ScrollDirectionType"]
                     if ScrollDirectionType == "Vertical":
@@ -156,6 +168,17 @@ class TOLua(object):
                 position_y = float(position.get("Y", 0))
                 if position_x != 0 or position_y != 0:
                     self._body += self.appendCode(indent, "self._%s:setPosition(ccp(%s, %s))"%(name, position_x, position_y))
+            #PercentPosition
+            PositionPercentXEnabled = data.get("PositionPercentXEnabled", None)
+            if PositionPercentXEnabled is not None:
+                PercentPositionX = float(data["PrePosition"]["X"])
+                self._body += self.appendCode(indent, "self._%s:setPercentPositionXEnabled(true)"%(name))
+                self._body += self.appendCode(indent, "self._%s:setPercentPositionX(%s)"%(name, PercentPositionX))
+            PositionPercentYEnabled = data.get("PositionPercentYEnabled", None)
+            if PositionPercentYEnabled is not None:
+                PercentPositionY = float(data["PrePosition"]["Y"])
+                self._body += self.appendCode(indent, "self._%s:setPercentPositionYEnabled(true)"%(name))
+                self._body += self.appendCode(indent, "self._%s:setPercentPositionY(%s)"%(name, PercentPositionY))
             #scale
             scale = data.get("Scale", None)
             if scale is not None:
