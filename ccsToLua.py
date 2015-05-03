@@ -28,7 +28,7 @@ class TOLua(object):
         self._text = "%s = class(\"%s\", function()\n\treturn %s:create()\nend)\n\n"%(self._class_name, self._class_name, className)
         self.nodeToCode(data, None)
         self._text += self._head + "\n"
-        self._text += self._create_function + "\n"
+        #self._text += self._create_function + "\n"
         self._text += self._body
         self._text += self.appendCode(0, "function %s:getMemberNodeByName(name)"%(self._class_name))
         self._text += self.appendCode(1, "return self[\"_\" .. name]")
@@ -39,20 +39,20 @@ class TOLua(object):
         indent = 0
         self._head += self.appendCode(indent, "%s._%s = nil"%(self._class_name, name))
         if parent is None:
-            self._create_function += self.appendCode(indent, "function %s:create()"%(self._class_name))
+            self._body += self.appendCode(indent, "function %s:create()"%(self._class_name))
             indent += 1
-            self._create_function += self.appendCode(indent, "local ret = %s:new()"%(self._class_name))
+            self._body += self.appendCode(indent, "local ret = %s:new()"%(self._class_name))
         else:
-            self._body += self.appendCode(indent, "function %s:load%s()"%(self._class_name, name.capitalize()))
+            self._body += self.appendCode(indent, "function %s:create%s(isRootLayer)"%(self._class_name, name.capitalize()))
             indent += 1
-            self._create_function += self.appendCode(indent, "ret:load%s()"%(name.capitalize()))
+            #self._create_function += self.appendCode(indent, "ret:load%s()"%(name.capitalize()))
             customClassName = data.get("CustomClassName", None)
             className = data["ctype"]
             if customClassName is None:
                 if className == "SingleNodeObjectData":
-                    self._body += self.appendCode(indent, "self._%s = STNode:create()"%(name))
+                    self._body += self.appendCode(indent, "local ret = STNode:create()"%(name))
                 elif className == "SpriteObjectData":
-                    self._body += self.appendCode(indent, "self._%s = STSprite:create(\"%s\")"%(name, data["FileData"]["Path"]))
+                    self._body += self.appendCode(indent, "local ret = STSprite:create(\"%s\")"%(data["FileData"]["Path"]))
                 #STButton
                 elif className == "ButtonObjectData":
                     normalImage = data["NormalFileData"]["Path"]
@@ -71,13 +71,13 @@ class TOLua(object):
                         disabledImage = "nil"
                     else:
                         disabledImage = "\"%s\""%(disabledImage)
-                    self._body += self.appendCode(indent, "self._%s = STButton:createWithImage(%s, %s, %s, %s)"%(name, normalImage, selectedImage, disabledImage, Scale9Enable))
+                    self._body += self.appendCode(indent, "local ret = STButton:createWithImage(%s, %s, %s, %s)"%(normalImage, selectedImage, disabledImage, Scale9Enable))
                     if Scale9Enable == "true":
                         Scale9OriginX = float(data.get("Scale9OriginX", 0))
                         Scale9OriginY = float(data.get("Scale9OriginY", 0))
                         Scale9Width = float(data.get("Scale9Width"))
                         Scale9Height = float(data.get("Scale9Height"))
-                        self._body += self.appendCode(indent, "self._%s:setCapInsets(CCRectMake(%s, %s, %s, %s))"%(name, Scale9OriginX, Scale9OriginY, Scale9Width, Scale9Height))
+                        self._body += self.appendCode(indent, "ret:setCapInsets(CCRectMake(%s, %s, %s, %s))"%(Scale9OriginX, Scale9OriginY, Scale9Width, Scale9Height))
                 elif className == "TextObjectData":
                     LabelText = data["LabelText"]
                     FontName = "g_sFontName"
@@ -89,17 +89,17 @@ class TOLua(object):
                         else:
                             FontName = "g_sFontName"
                     FontSize = data["FontSize"]
-                    self._body += self.appendCode(indent, "self._%s = STLabel:create(\"%s\", %s, %s)"%(name, LabelText, FontName, FontSize))
+                    self._body += self.appendCode(indent, "local ret = STLabel:create(\"%s\", %s, %s)"%(LabelText, FontName, FontSize))
                     Alpha = data.get("Alpha", None)
                     if Alpha is not None:
                         data["CColor"]["A"] = Alpha
                     data["Size"] = None
                     # todo
                 elif className == "TextFieldObjectData":
-                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "local ret = STSprite:create()")
                     # todo
                 elif className == "LoadingBarObjectData":
-                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "local ret = STSprite:create()")
                     # todo
                 elif className == "ImageViewObjectData":
                     Scale9OriginX = float(data.get("Scale9OriginX", 0))
@@ -107,93 +107,95 @@ class TOLua(object):
                     Scale9Width = float(data.get("Scale9Width"))
                     Scale9Height = float(data.get("Scale9Height"))
                     capInset = "CCRectMake(%s, %s, %s, %s)"%(Scale9OriginX, Scale9OriginY, Scale9Width, Scale9Height)
-                    self._body += self.appendCode(indent, "self._%s = STScale9Sprite:create(\"%s\", %s)"%(name, data["FileData"]["Path"], capInset))
+                    self._body += self.appendCode(indent, "local ret = STScale9Sprite:create(\"%s\", %s)"%(data["FileData"]["Path"], capInset))
                 elif className == "CheckBoxObjectData":
-                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "local ret = STSprite:create()")
                     # todo
                 elif className == "PageViewObjectData":
-                    self._body += self.appendCode(indent, "self._%s = STSprite:create()"%(name))
+                    self._body += self.appendCode(indent, "local ret = STSprite:create()")
                     # todo
                 elif className == "PanelObjectData":
-                    self._body += self.appendCode(indent, "self._%s = STLayout:create()"%(name))
+                    self._body += self.appendCode(indent, "local ret = STLayout:create()")
                     # todo 
                 elif className == "ScrollViewObjectData" or className == "ListViewObjectData":
                     if className == "ScrollViewObjectData":
-                        self._body += self.appendCode(indent, "self._%s = STScrollView:create()"%(name))
+                        self._body += self.appendCode(indent, "local ret = STScrollView:create()")
                     elif className == "ListViewObjectData":
-                        self._body += self.appendCode(indent, "self._%s = STTableView:create()"%(name))
+                        self._body += self.appendCode(indent, "local ret = STTableView:create()")
                     #direction
                     ScrollDirectionType = data["ScrollDirectionType"]
                     if ScrollDirectionType == "Vertical":
-                        self._body += self.appendCode(indent, "self._%s:setDirection(kCCScrollViewDirectionVertical)"%(name))
+                        self._body += self.appendCode(indent, "ret:setDirection(kCCScrollViewDirectionVertical)")
                     elif ScrollDirectionType == "Horizontal":
-                        self._body += self.appendCode(indent, "self._%s:setDirection(kCCScrollViewDirectionHorizontal)"%(name))
+                        self._body += self.appendCode(indent, "ret:setDirection(kCCScrollViewDirectionHorizontal)")
                     #clipAble
                     ClipAble = data.get("ClipAble", "false")
                     if ClipAble == "false":
-                        self._body += self.appendCode(indent, "self._%s:setClippingToBounds(false)"%(name))
+                        self._body += self.appendCode(indent, "ret:setClippingToBounds(false)")
                     IsBounceEnabled = data.get("IsBounceEnabled", "false")
                     if IsBounceEnabled == "false":
-                        self._body += self.appendCode(indent, "self._%s:setBounceable(false)"%(name))
+                        self._body += self.appendCode(indent, "ret:setBounceable(false)")
                     # todo
             #if customClassName == "":
-            #addChild
-            if parent == self._data["GameProjectFile"]["Content"]["Content"]["ObjectData"]["Name"]:
-                self._body += self.appendCode(indent, "self:addNode(self._%s)"%(name))
-            else:
-                self._body += self.appendCode(indent, "self._%s:addNode(self._%s)"%(parent, name))
+            # #addChild
+            # if parent == self._data["GameProjectFile"]["Content"]["Content"]["ObjectData"]["Name"]:
+            #     self._body += self.appendCode(indent, "self:addNode(self._%s)"%(name))
+            # else:
+            #     self._body += self.appendCode(indent, "self._%s:addNode(self._%s)"%(parent, name))
+            #name
+            self._body += self.appendCode(indent, "ret:setName(\"%s\")"%(name))
             #contentSize
             content_size = data.get("Size", None)
             if content_size is not None:
                 width = float(content_size.get("X", 0))
                 height = float(content_size.get("Y", 0))
                 size = "CCSizeMake(%s, %s)"%(width, height)
-                self._body += self.appendCode(indent, "self._%s:setNodeSize(%s)"%(name, size))
+                self._body += self.appendCode(indent, "ret:setNodeSize(%s)"%(size))
                 if className == "ListViewObjectData":
-                    self._body += self.appendCode(indent, "self._%s:setInnerNodeSize(%s)"%(name, size))
+                    self._body += self.appendCode(indent, "ret:setInnerNodeSize(%s)"%(size))
             #innerNodeSize
             if className == "ScrollViewObjectData":
                 InnerNodeSize = data["InnerNodeSize"]
                 width = InnerNodeSize.get("Width")
                 height = InnerNodeSize.get("Height")
-                self._body += self.appendCode(indent, "self._%s:setInnerNodeSize(CCSizeMake(%s, %s))"%(name, width, height))
+                self._body += self.appendCode(indent, "ret:setInnerNodeSize(CCSizeMake(%s, %s))"%(width, height))
             #tag
             tag = data.get("Tag", None)
             if tag is not None:
-                self._body += self.appendCode(indent, "self._%s:setTag(%s)"%(name, float(tag)))
+                self._body += self.appendCode(indent, "ret:setTag(%s)"%(float(tag)))
             #position
             position = data.get("Position", None)
             if position is not None:
                 position_x = float(position.get("X", 0))
                 position_y = float(position.get("Y", 0))
                 if position_x != 0 or position_y != 0:
-                    self._body += self.appendCode(indent, "self._%s:setPosition(ccp(%s, %s))"%(name, position_x, position_y))
+                    self._body += self.appendCode(indent, "ret:setPosition(ccp(%s, %s))"%(position_x, position_y))
             #PercentPosition
             PositionPercentXEnabled = data.get("PositionPercentXEnabled", None)
             if PositionPercentXEnabled is not None:
                 PercentPositionX = float(data["PrePosition"]["X"])
-                self._body += self.appendCode(indent, "self._%s:setPercentPositionXEnabled(true)"%(name))
-                self._body += self.appendCode(indent, "self._%s:setPercentPositionX(%s)"%(name, PercentPositionX))
+                self._body += self.appendCode(indent, "ret:setPercentPositionXEnabled(true)")
+                self._body += self.appendCode(indent, "ret:setPercentPositionX(%s)"%(PercentPositionX))
             PositionPercentYEnabled = data.get("PositionPercentYEnabled", None)
             if PositionPercentYEnabled is not None:
                 PercentPositionY = float(data["PrePosition"]["Y"])
-                self._body += self.appendCode(indent, "self._%s:setPercentPositionYEnabled(true)"%(name))
-                self._body += self.appendCode(indent, "self._%s:setPercentPositionY(%s)"%(name, PercentPositionY))
+                self._body += self.appendCode(indent, "ret:setPercentPositionYEnabled(true)")
+                self._body += self.appendCode(indent, "ret:setPercentPositionY(%s)"%(PercentPositionY))
             #scale
             scale = data.get("Scale", None)
             if scale is not None:
                 scale_x = float(scale.get("ScaleX", 1))
                 scale_y = float(scale.get("ScaleY", 1))
                 if scale_x != 1:
-                    self._body += self.appendCode(indent, "self._%s:setScaleX(%s)"%(name, scale_x))
+                    self._body += self.appendCode(indent, "ret:setScaleX(%s)"%(scale_x))
                 if scale_y != 1:
-                    self._body += self.appendCode(indent, "self._%s:setScaleY(%s)"%(name, scale_y))
+                    self._body += self.appendCode(indent, "ret:setScaleY(%s)"%(scale_y))
             #anchorPoint
             anchor_point = data.get("AnchorPoint", None)
             if anchor_point is not None:
                 anchor_point_x = float(anchor_point.get("ScaleX", 0))
                 anchor_point_y = float(anchor_point.get("ScaleY", 0))
-                self._body += self.appendCode(indent, "self._%s:setAnchorPoint(ccp(%s, %s))"%(name, anchor_point_x, anchor_point_y))
+                self._body += self.appendCode(indent, "ret:setAnchorPoint(ccp(%s, %s))"%(anchor_point_x, anchor_point_y))
             #color
             color = data.get("CColor", None)
             if color is not None:
@@ -202,8 +204,8 @@ class TOLua(object):
                 g = float(color.get("G", 0))
                 b = float(color.get("B", 0))
                 if a != 255 or r != 255 or g != 255 or b != 255:
-                    self._body += self.appendCode(indent, "self._%s:setNodeColor(ccc3(%s, %s, %s))"%(name, r, g, b))
-                    self._body += self.appendCode(indent, "self._%s:setNodeOpacity(%s)"%(name, a))
+                    self._body += self.appendCode(indent, "ret:setNodeColor(ccc3(%s, %s, %s))"%(r, g, b))
+                    self._body += self.appendCode(indent, "ret:setNodeOpacity(%s)"%(a))
             #bgColor
             bgColor = data.get("SingleColor", None)
             if bgColor is not None:
@@ -211,18 +213,41 @@ class TOLua(object):
                 g = float(bgColor.get("G", 0))
                 b = float(bgColor.get("B", 0))
                 a = float(data.get("BackColorAlpha", 255))
-                self._body += self.appendCode(indent, "self._%s:setBgColor(ccc3(%s, %s, %s))"%(name, r, g, b))
-                self._body += self.appendCode(indent, "self._%s:setBgOpacity(%s)"%(name, a))
+                self._body += self.appendCode(indent, "ret:setBgColor(ccc3(%s, %s, %s))"%(r, g, b))
+                self._body += self.appendCode(indent, "ret:setBgOpacity(%s)"%(a))
             TouchEnable = data.get("TouchEnable", None)
             if TouchEnable is not None:
-                self._body += self.appendCode(indent, "self._%s:setTouchEnabled(true)"%(name))
-            #end
-            indent -= 1
-            self._body += self.appendCode(indent, "end\n")
+                self._body += self.appendCode(indent, "ret:setTouchEnabled(true)")
+        #loadChildren
+        children = data.get("Children", None)
+        if children is not None:
+            nodesData = children["AbstractNodeData"]
+            if isinstance(nodesData, dict):
+                nodesData = [nodesData]
+            for nodeData in nodesData:
+                nodeName = nodeData["Name"]
+                if parent is None:
+                    self._body += self.appendCode(indent, "local %s = %s:create%s(true)"%(nodeName, self._class_name, nodeName.capitalize()))
+                else:
+                    self._body += self.appendCode(indent, "local %s = %s:create%s(isRootLayer)"%(nodeName, self._class_name, nodeName.capitalize()))
+                self._body += self.appendCode(indent, "ret:addNode(%s)"%(nodeName))
+                if parent is not None:
+                    self._body += self.appendCode(indent, "if isRootLayer then")
+                    indent += 1
+                    self._body += self.appendCode(indent, "self._%s = %s"%(nodeName, nodeName))
+                    indent -= 1
+                    self._body += self.appendCode(indent, "end")
+                else:
+                    self._body += self.appendCode(indent, "ret._%s = %s"%(nodeName, nodeName))
+        #return 
+        self._body += self.appendCode(indent, "return ret")
+        #end
+        indent -= 1
+        self._body += self.appendCode(indent, "end\n")
 
         children = data.get("Children", None)
         if children is not None:
-            nodeData = children["NodeObjectData"]
+            nodeData = children["AbstractNodeData"]
             if isinstance(nodeData, dict):
                 self.nodeToCode(nodeData, name)
             else:
