@@ -6,7 +6,9 @@ import string
 from xmltodict import parse
 from xmltodict import unparse
 import pprint
-file_path = "/Users/bzx/Documents/CocosProjects/CocosProject/cocosstudio/TestLayer.csd"
+#file_path = "/Users/bzx/Documents/CocosProjects/CocosProject/cocosstudio/MoonLayer.csd"
+#file_path = "/Users/bzx/Documents/CocosProjects/CocosProject/cocosstudio/MoonShopLayer.csd"
+file_path = "/Users/bzx/Documents/CocosProjects/CocosProject/cocosstudio/MoonFightResultLayer.csd"
 
 class TOLua(object):
     _file_path = ""
@@ -19,8 +21,8 @@ class TOLua(object):
     _body = ""
     def __init__(self, file_path):
         self._file_path = file_path
-        self._class_name = os.path.splitext(os.path.basename(self._file_path))[0]
-        self._class_file_path = "%s/%s.lua"%(os.path.dirname(self._file_path),self._class_name)
+        self._class_name = "ST" + os.path.splitext(os.path.basename(self._file_path))[0]
+        self._class_file_path = "%s/%s.lua"%(os.path.dirname(self._file_path), self._class_name)
 
     def toCode(self):
         data = self._data["GameProjectFile"]["Content"]["Content"]["ObjectData"]
@@ -43,7 +45,7 @@ class TOLua(object):
             indent += 1
             self._body += self.appendCode(indent, "local ret = %s:new()"%(self._class_name))
         else:
-            self._body += self.appendCode(indent, "function %s:create%s(isRootLayer)"%(self._class_name, name.capitalize()))
+            self._body += self.appendCode(indent, "function %s:create%s(isRootLayer)"%(self._class_name, name[0].upper() + name[1:]))
             indent += 1
             #self._create_function += self.appendCode(indent, "ret:load%s()"%(name.capitalize()))
             customClassName = data.get("CustomClassName", None)
@@ -78,6 +80,39 @@ class TOLua(object):
                         Scale9Width = float(data.get("Scale9Width"))
                         Scale9Height = float(data.get("Scale9Height"))
                         self._body += self.appendCode(indent, "ret:setCapInsets(CCRectMake(%s, %s, %s, %s))"%(Scale9OriginX, Scale9OriginY, Scale9Width, Scale9Height))
+                    #ButtonText
+                    ButtonText = data.get("ButtonText", None)
+                    if ButtonText is not None:
+                        FontSize = data["FontSize"]
+                        TextColor = data["TextColor"]
+                        a = float(TextColor.get("A", 0))
+                        r = float(TextColor.get("R", 0))
+                        g = float(TextColor.get("G", 0))
+                        b = float(TextColor.get("B", 0))
+                        FontName = "g_sFontName"
+                        FontResource = data.get("FontResource", None)
+                        if FontResource is not None:
+                            FontNamePath = FontResource["Path"]
+                            if FontNamePath == "py.ttf":
+                                FontName = "g_sFontPangWa"
+                        self._body += self.appendCode(indent, "local normalLabel = STLabel:create(\"%s\", %s, %s, 1, ccc3(0, 0, 0), type_stroke)"%(ButtonText, FontName, FontSize))
+                        if r != 255 or g != 255 or b != 255:
+                            self._body += self.appendCode(indent, "normalLabel:setNodeColor(ccc3(%s, %s, %s))"%(r, g, b))
+                        if a != 255:
+                            self._body += self.appendCode(indent, "normalLabel:setNodeOpacity(%s)"%(a))
+                        self._body += self.appendCode(indent, "ret:setNormalLabel(normalLabel)")
+                        self._body += self.appendCode(indent, "local selectedLabel = STLabel:create(\"%s\", %s, %s, 1, ccc3(0, 0, 0), type_stroke)"%(ButtonText, FontName, FontSize))
+                        if r != 255 or g != 255 or b != 255:
+                            self._body += self.appendCode(indent, "selectedLabel:setNodeColor(ccc3(%s, %s, %s))"%(r, g, b))
+                        if a != 255:
+                            self._body += self.appendCode(indent, "selectedLabel:setNodeOpacity(%s)"%(a))
+                        self._body += self.appendCode(indent, "ret:setSelectedLabel(selectedLabel)")
+                        self._body += self.appendCode(indent, "local disabledLabel = STLabel:create(\"%s\", %s, %s, 1, ccc3(0, 0, 0), type_stroke)"%(ButtonText, FontName, FontSize))
+                        if r != 255 or g != 255 or b != 255:
+                            self._body += self.appendCode(indent, "disabledLabel:setNodeColor(ccc3(%s, %s, %s))"%(r, g, b))
+                        if a != 255:
+                            self._body += self.appendCode(indent, "disabledLabel:setNodeOpacity(%s)"%(a))
+                        self._body += self.appendCode(indent, "ret:setDisabledLabel(disabledLabel)")
                 elif className == "TextObjectData":
                     LabelText = data["LabelText"]
                     FontName = "g_sFontName"
@@ -86,10 +121,13 @@ class TOLua(object):
                         FontNamePath = FontResource["Path"]
                         if FontNamePath == "py.ttf":
                             FontName = "g_sFontPangWa"
-                        else:
-                            FontName = "g_sFontName"
                     FontSize = data["FontSize"]
-                    self._body += self.appendCode(indent, "local ret = STLabel:create(\"%s\", %s, %s)"%(LabelText, FontName, FontSize))
+                    #ShadowEnabled
+                    ShadowEnabled = data.get("ShadowEnabled", None)
+                    if ShadowEnabled is not None:
+                        self._body += self.appendCode(indent, "local ret = STLabel:create(\"%s\", %s, %s, 1, ccc3(0, 0, 0), type_shadow)"%(LabelText, FontName, FontSize))
+                    else:
+                        self._body += self.appendCode(indent, "local ret = STLabel:create(\"%s\", %s, %s)"%(LabelText, FontName, FontSize))
                     Alpha = data.get("Alpha", None)
                     if Alpha is not None:
                         data["CColor"]["A"] = Alpha
@@ -122,6 +160,8 @@ class TOLua(object):
                         self._body += self.appendCode(indent, "local ret = STScrollView:create()")
                     elif className == "ListViewObjectData":
                         self._body += self.appendCode(indent, "local ret = STTableView:create()")
+                        data.setdefault("DirectionType", "Horizontal")
+                        data["ScrollDirectionType"] = data["DirectionType"]
                     #direction
                     ScrollDirectionType = data["ScrollDirectionType"]
                     if ScrollDirectionType == "Vertical":
@@ -178,6 +218,7 @@ class TOLua(object):
                 self._body += self.appendCode(indent, "ret:setPercentPositionX(%s)"%(PercentPositionX))
             PositionPercentYEnabled = data.get("PositionPercentYEnabled", None)
             if PositionPercentYEnabled is not None:
+                data["PrePosition"].setdefault("Y", 0)
                 PercentPositionY = float(data["PrePosition"]["Y"])
                 self._body += self.appendCode(indent, "ret:setPercentPositionYEnabled(true)")
                 self._body += self.appendCode(indent, "ret:setPercentPositionY(%s)"%(PercentPositionY))
@@ -203,8 +244,9 @@ class TOLua(object):
                 r = float(color.get("R", 0))
                 g = float(color.get("G", 0))
                 b = float(color.get("B", 0))
-                if a != 255 or r != 255 or g != 255 or b != 255:
+                if r != 255 or g != 255 or b != 255:
                     self._body += self.appendCode(indent, "ret:setNodeColor(ccc3(%s, %s, %s))"%(r, g, b))
+                if a != 255:
                     self._body += self.appendCode(indent, "ret:setNodeOpacity(%s)"%(a))
             #bgColor
             bgColor = data.get("SingleColor", None)
@@ -214,10 +256,12 @@ class TOLua(object):
                 b = float(bgColor.get("B", 0))
                 a = float(data.get("BackColorAlpha", 255))
                 self._body += self.appendCode(indent, "ret:setBgColor(ccc3(%s, %s, %s))"%(r, g, b))
-                self._body += self.appendCode(indent, "ret:setBgOpacity(%s)"%(a))
+                if a != 255:
+                    self._body += self.appendCode(indent, "ret:setBgOpacity(%s)"%(a))
             TouchEnable = data.get("TouchEnable", None)
             if TouchEnable is not None:
-                self._body += self.appendCode(indent, "ret:setTouchEnabled(true)")
+                if className != "ButtonObjectData":
+                    self._body += self.appendCode(indent, "ret:setNodeTouchEnabled(true)")
         #loadChildren
         children = data.get("Children", None)
         if children is not None:
@@ -226,19 +270,23 @@ class TOLua(object):
                 nodesData = [nodesData]
             for nodeData in nodesData:
                 nodeName = nodeData["Name"]
+                VisibleForFrame = nodeData.get("VisibleForFrame", None)
+                if VisibleForFrame is not None:
+                    continue
                 if parent is None:
-                    self._body += self.appendCode(indent, "local %s = %s:create%s(true)"%(nodeName, self._class_name, nodeName.capitalize()))
+                    self._body += self.appendCode(indent, "local %s = ret:create%s(true)"%(nodeName, nodeName[0].upper() + nodeName[1:]))
                 else:
-                    self._body += self.appendCode(indent, "local %s = %s:create%s(isRootLayer)"%(nodeName, self._class_name, nodeName.capitalize()))
+                    self._body += self.appendCode(indent, "local %s = self:create%s(isRootLayer)"%(nodeName, nodeName[0].upper() + nodeName[1:]))
                 self._body += self.appendCode(indent, "ret:addNode(%s)"%(nodeName))
-                if parent is not None:
-                    self._body += self.appendCode(indent, "if isRootLayer then")
-                    indent += 1
-                    self._body += self.appendCode(indent, "self._%s = %s"%(nodeName, nodeName))
-                    indent -= 1
-                    self._body += self.appendCode(indent, "end")
-                else:
-                    self._body += self.appendCode(indent, "ret._%s = %s"%(nodeName, nodeName))
+        #成员变量
+        if parent is not None:
+            self._body += self.appendCode(indent, "if isRootLayer then")
+            indent += 1
+            self._body += self.appendCode(indent, "self._%s = ret"%(name))
+            indent -= 1
+            self._body += self.appendCode(indent, "end")
+        else:
+            self._body += self.appendCode(indent, "ret._layer = ret")
         #return 
         self._body += self.appendCode(indent, "return ret")
         #end
@@ -264,7 +312,6 @@ class TOLua(object):
         print(self._class_file_path)
         print(self._file_path)
         fp = open(self._class_file_path, "w")
-        #fp = open("/Users/bzx/Documents/sango/FknSango/CardSango/Resources/script/ccsToLua/TestLayer.lua", "w")
         fp.write(self._text)
         fp.close()
     
